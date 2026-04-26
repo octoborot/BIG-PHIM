@@ -6,7 +6,7 @@ const app = express();
 
 // 1. Middleware
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: 'https://big-phim.vercel.app',
     credentials: true
 }));
 app.use(express.json());
