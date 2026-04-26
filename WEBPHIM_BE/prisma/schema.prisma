@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id          Int       @id @default(autoincrement())
+  password    String    @db.VarChar(255)
+  email       String    @unique @db.VarChar(255)
+  is_active   Boolean?  @default(true)
+  is_locked   Boolean?  @default(false)
+  is_deleted  Boolean?  @default(false)
+  lock_reason String?   @db.VarChar(255)
+  lock_number Int?      @default(0)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  role_id     Int
+  role        role      @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  profile     profile?
+}
+
+model episode {
+  id             Int             @id @default(autoincrement())
+  episode_number Int
+  title          String?         @db.VarChar(255)
+  video_url      String?         @db.VarChar(255)
+  duration       Int?
+  air_date       DateTime?       @db.Date
+  created_at     DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?       @default(now()) @db.Timestamp(6)
+  season_id      Int
+  season         season          @relation(fields: [season_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  schedule       schedule[]
+  watch_history  watch_history[]
+
+  @@unique([season_id, episode_number], map: "unique_season_episode")
+}
+
+model favorite_movie {
+  id         Int       @id @default(autoincrement())
+  profile_id Int
+  movie_id   Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  notes      String?
+  movie      movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile    profile   @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([profile_id, movie_id])
+}
+
+model favorite_person {
+  id           Int                   @id @default(autoincrement())
+  profile_id   Int
+  person_id    Int
+  created_at   DateTime?             @default(now()) @db.Timestamp(6)
+  role_content fav_person_role_enum?
+  person       person                @relation(fields: [person_id], references: [id], onUpdate: NoAction)
+  profile      profile               @relation(fields: [profile_id], references: [id], onUpdate: NoAction)
+
+  @@unique([profile_id, person_id])
+}
+
+model genre {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique @db.VarChar(255)
+  created_at  DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?     @default(now()) @db.Timestamp(6)
+  movie_genre movie_genre[]
+}
+
+model movie {
+  id             Int                @id @default(autoincrement())
+  title          String             @db.VarChar(255)
+  orignal_title  String             @db.VarChar(255)
+  description    String
+  type           movie_type_enum
+  release_year   DateTime           @db.Date
+  duration       DateTime?          @db.Time(6)
+  country        String             @db.VarChar(255)
+  poster_url     String             @db.VarChar(255)
+  trailer_url    String             @db.VarChar(255)
+  age_rating     Float              @db.Real
+  status         movie_status_enum?
+  created_at     DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?          @default(now()) @db.Timestamp(6)
+  favorite_movie favorite_movie[]
+  movie_genre    movie_genre[]
+  movie_person   movie_person[]
+  movie_topic    movie_topic[]
+  season         season[]
+}
+
+model movie_genre {
+  id       Int   @id @default(autoincrement())
+  movie_id Int
+  genre_id Int
+  genre    genre @relation(fields: [genre_id], references: [id], onUpdate: NoAction)
+  movie    movie @relation(fields: [movie_id], references: [id], onUpdate: NoAction)
+
+  @@unique([movie_id, genre_id])
+}
+
+model movie_person {
+  id        Int                     @id @default(autoincrement())
+  role      movie_person_role_enum?
+  movie_id  Int
+  person_id Int
+  movie     movie                   @relation(fields: [movie_id], references: [id], onUpdate: NoAction)
+  person    person                  @relation(fields: [person_id], references: [id], onUpdate: NoAction)
+
+  @@unique([movie_id, person_id, role])
+}
+
+model movie_topic {
+  id       Int   @id @default(autoincrement())
+  movie_id Int
+  topic_id Int
+  movie    movie @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  topic    topic @relation(fields: [topic_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([movie_id, topic_id])
+}
+
+model notification {
+  id         Int            @id @default(autoincrement())
+  type       noti_type_enum
+  content    String         @db.VarChar(255)
+  is_read    Boolean?       @default(false)
+  created_at DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at DateTime?      @default(now()) @db.Timestamp(6)
+  profile_id Int
+  type_id    Int?
+  profile    profile        @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model person {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique @db.VarChar(255)
+  avatar_url      String            @unique @db.VarChar(255)
+  birthday        DateTime          @db.Date
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?         @default(now()) @db.Timestamp(6)
+  favorite_person favorite_person[]
+  movie_person    movie_person[]
+}
+
+model profile {
+  id              Int               @id @default(autoincrement())
+  display_name    String            @db.VarChar(255)
+  gender          gender_enum?      @default(Kh_ng_x_c___nh)
+  avatar_url      String?           @default("linkk") @db.VarChar(255)
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?         @default(now()) @db.Timestamp(6)
+  account_id      Int               @unique
+  favorite_movie  favorite_movie[]
+  favorite_person favorite_person[]
+  notification    notification[]
+  account         account           @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  watch_history   watch_history[]
+}
+
+model role {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  account    account[]
+}
+
+model schedule {
+  id          Int       @id @default(autoincrement())
+  release_day DateTime  @db.Date
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  esposide_id Int
+  episode     episode   @relation(fields: [esposide_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model season {
+  id            Int       @id @default(autoincrement())
+  season_number Int       @default(1)
+  title         String?   @db.VarChar(255)
+  release_date  DateTime? @db.Date
+  description   String?
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+  movie_id      Int
+  episode       episode[]
+  movie         movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([movie_id, season_number], map: "unique_movie_season")
+}
+
+model topic {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique @db.VarChar(255)
+  created_at  DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?     @default(now()) @db.Timestamp(6)
+  movie_topic movie_topic[]
+}
+
+model watch_history {
+  id              Int       @id @default(autoincrement())
+  last_watched_at DateTime? @default(now()) @db.Timestamp(6)
+  is_completed    Boolean?  @default(false)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+  profile_id      Int
+  episode_id      Int
+  progress_second Int?      @default(0)
+  episode         episode   @relation(fields: [episode_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile         profile   @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+enum fav_person_role_enum {
+  Actor
+  Director
+  Both
+}
+
+enum gender_enum {
+  Nam
+  Nu             @map("Nữ")
+  Kh_ng_x_c___nh @map("Không xác định")
+}
+
+enum movie_person_role_enum {
+  Actor
+  Director
+  Voice_Actor @map("Voice Actor")
+}
+
+enum movie_status_enum {
+  ongoing
+  completed
+  upcoming
+}
+
+enum movie_type_enum {
+  Series
+  Single
+}
+
+enum noti_type_enum {
+  Actor
+  Director
+  Movie
+}
