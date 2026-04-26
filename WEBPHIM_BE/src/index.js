@@ -5,10 +5,8 @@ const cors = require('cors');
 const app = express();
 
 // 1. Middleware
-app.use(cors({
-    origin: 'https://big-phim.vercel.app',
-    credentials: true
-}));
+app.use(cors());
+
 app.use(express.json());
 
 // 2. Routes
